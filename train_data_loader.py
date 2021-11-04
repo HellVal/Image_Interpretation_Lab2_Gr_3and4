@@ -32,10 +32,12 @@ class ImageLoader(VisionDataset):
     # ugly fix for working with windows
     # Windows cannot pass the h5 file to sub-processes, so each process must access the file itself.
     def load_data1(self):
-        h5 = h5py.File("P:/pf/pfshare/data/mikhailu/dataset_rgb_nir_train.hdf5", 'r')
-        self.RGB = h5["INPT_1"]
-        self.NIR = h5["NIR_1"]
-        self.CLD = h5["CLD_1"]
+        #h5 = h5py.File("P:/pf/pfshare/data/mikhailu/test_file_Pascal.hdf5", 'r')
+        h5 = h5py.File('P:/pf/pfstud/II_Group3/test_file.hdf5','r')
+        self.RGB = h5["INPT"]
+        # self.RGB = h5["INPT_1"]
+        # self.NIR = h5["NIR_1"]
+        # self.CLD = h5["CLD_1"]
         self.GT = h5["GT"]
         self.has_data = True
 
@@ -54,23 +56,36 @@ class ImageLoader(VisionDataset):
 
         # crop all data at the previously determined position
         RGB_sample = self.RGB[b, n:n + self.wsize, m:m + self.wsize]
-        NIR_sample = self.NIR[b, n:n + self.wsize, m:m + self.wsize]
-        CLD_sample = self.CLD[b, n:n + self.wsize, m:m + self.wsize]
+        # NIR_sample = self.NIR[b, n:n + self.wsize, m:m + self.wsize]
+        # CLD_sample = self.CLD[b, n:n + self.wsize, m:m + self.wsize]
         GT_sample = self.GT[b, n:n + self.wsize, m:m + self.wsize]
 
-        # normalize NIR and RGB by maximumg possible value
-        NIR_sample = np.asarray(NIR_sample, np.float32) / (2 ** 16 - 1)
-        RGB_sample = np.asarray(RGB_sample, np.float32) / (2 ** 8 - 1)
-        X_sample = np.concatenate([RGB_sample, np.expand_dims(NIR_sample, axis=-1)], axis=-1)
 
-        ### correct gt data ###
-        # first assign gt at the positions of clouds
-        cloud_positions = np.where(CLD_sample > 10)
-        GT_sample[cloud_positions] = 2
-        # second remove gt where no data is available - where the max of the input channel is zero
-        idx = np.where(np.max(X_sample, axis=-1) == 0)  # points where no data is available
-        GT_sample[idx] = 99  # 99 marks the absence of a label and it should be ignored during training
-        GT_sample = np.where(GT_sample > 3, 99, GT_sample)
+###########################################################################################################
+###########################################################################################################
+# check if this part of the code has to be adapted
+
+
+        # normalize NIR and RGB by maximumg possible value
+        # NIR_sample = np.asarray(NIR_sample, np.float32) / (2 ** 16 - 1)
+        RGB_sample = np.asarray(RGB_sample, np.float32) / (2 ** 8 - 1)
+        # X_sample = np.concatenate([RGB_sample, np.expand_dims(NIR_sample, axis=-1)], axis=-1)
+        
+        X_sample = RGB_sample()
+###########################################################################################################
+###########################################################################################################
+        # ### correct gt data ###
+        # # first assign gt at the positions of clouds
+        # cloud_positions = np.where(CLD_sample > 10)
+        # GT_sample[cloud_positions] = 2
+        # # second remove gt where no data is available - where the max of the input channel is zero
+        # idx = np.where(np.max(X_sample, axis=-1) == 0)  # points where no data is available
+        # GT_sample[idx] = 99  # 99 marks the absence of a label and it should be ignored during training
+        # GT_sample = np.where(GT_sample > 3, 99, GT_sample)
+        
+###########################################################################################################
+###########################################################################################################             
+        
         # pad the data if size does not match
         sh_x, sh_y = np.shape(GT_sample)
         pad_x, pad_y = 0, 0

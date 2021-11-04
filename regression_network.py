@@ -5,6 +5,9 @@ Created on Wed Nov  3 22:07:44 2021
 @author: paimhof
 """
 
+
+#source: https://machinelearningmastery.com/pytorch-tutorial-develop-deep-learning-models/
+
 #%% import section 
 
 import h5py
@@ -28,25 +31,31 @@ from torch import optim as op
 
 #%% define variables
 
-img_size = 10980.0
-
-
-
 num_batches = 8
 cut_size = 128
+num_layers = 4
+
+
+# hyperparameters
+num_epocs = 1
+learning_rate = 0.01
 #%%check for cuda
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+# probably add .is_cuda to the code to run the complete pipeline on the GPU
 
 #%% create train and validadtion size
 
 trainset = train_data_loader.ImageLoader( windowsize = cut_size,test=False)
 
-
-train_size = int(len(trainset)*0.05)
+train_size = int(len(trainset)*0.01)
 valid_size = len(trainset)-train_size
 
 
+
+# TODO add the test data set 
+# propbably add additional dataloader
 
 #%% create dataloader
 train_dataset, validation_dataset = torch.utils.data.random_split(trainset, [train_size, valid_size])
@@ -62,29 +71,37 @@ validation_loader = torch.utils.data.DataLoader(validation_dataset,
                                             shuffle=True)
 
 #%% normalize data
-# TODO in the loader!!
+# TODO in the dataloader!!
 
 
 
 #%% define network
 
 #model = regression_model.regressionModel(100).to(device)
-#model = regression_model.UNet(4,1).to(device)
-model = regression_model.UNet2().to(device)
+model = regression_model.UNet(4,1).to(device)
+#model = regression_model.UNet2().to(device)
+
+#model = regression_model.FullyConnected(num_batches*num_layers*cut_size*cut_size,100,50,1)
 model.train()
 
 
-# define the optimization
+# define the optimization/Loss
 criterion = nn.MSELoss()
-optimizer = op.SGD(model.parameters(), lr=0.01, momentum=0.9)
+# set optimizer 
+optimizer = op.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+
 
 
 #%%
+
+loss_data = []
+
 # enumerate epochs
-for epoch in tqdm(range(2)):
+for epoch in tqdm(range(num_epocs)):
     # enumerate mini batches
     for i, (inputs, targets) in enumerate(train_loader):
         print(i)
+        
         # clear the gradients
         optimizer.zero_grad()
         # compute the model output
@@ -95,3 +112,9 @@ for epoch in tqdm(range(2)):
         loss.backward()
         # update model weights
         optimizer.step()
+        
+        
+       # loss_data.append(loss.detach().nump())
+        
+       # TODO validate at the end of the epoch
+       # compare the training loss with the validation loss
