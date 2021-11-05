@@ -17,8 +17,8 @@ import math
 import random 
 from tqdm import tqdm
 
-from torchinfo import summary
-
+from numpy import vstack
+from sklearn.metrics import accuracy_score
 
 import train_data_loader
 import torch
@@ -38,7 +38,7 @@ num_layers = 4
 
 # hyperparameters
 num_epocs = 1
-learning_rate = 0.01
+learning_rate = 0.000001
 #%%check for cuda
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -51,6 +51,7 @@ trainset = train_data_loader.ImageLoader( windowsize = cut_size,test=False)
 
 train_size = int(len(trainset)*0.01)
 valid_size = len(trainset)-train_size
+
 
 
 
@@ -78,8 +79,8 @@ validation_loader = torch.utils.data.DataLoader(validation_dataset,
 #%% define network
 
 #model = regression_model.regressionModel(100).to(device)
-model = regression_model.UNet(4,1).to(device)
-#model = regression_model.UNet2().to(device)
+#model = regression_model.UNet(4,1).to(device)
+model = regression_model.UNet2().to(device)
 
 #model = regression_model.FullyConnected(num_batches*num_layers*cut_size*cut_size,100,50,1)
 model.train()
@@ -101,20 +102,46 @@ for epoch in tqdm(range(num_epocs)):
     # enumerate mini batches
     for i, (inputs, targets) in enumerate(train_loader):
         print(i)
-        
+        inputs = nn.functional.normalize(inputs)
         # clear the gradients
         optimizer.zero_grad()
         # compute the model output
         yhat = model(inputs)
+        yhat = torch.squeeze(yhat)
         # calculate loss
         loss = criterion(yhat, targets)
         # credit assignment
         loss.backward()
         # update model weights
         optimizer.step()
+    
+    predictions, actuals = list(), list()
+    for j, (inputs_v, targets_v) in enumerate(validation_loader):
+        if j >10:
+            break
+        # evaluate model on the validation set
+        inputs_v = nn.functional.normalize(inputs_v)
+        yhat_v = model(inputs_v)
+        yhat_v = torch.squeeze(yhat_v)
+        # numpy array
+        yhat_v = yhat_v.detach().numpy()
+        actual = targets_v.numpy()
+        #actual = actual.reshape((len(actual),1))
+        
+        predictions.append(yhat)
+        actuals.append(actual)
+        
+    # predictions, actuals = vstack(predictions), vstack(actuals)
+    # acc = accuracy_score(actuals,predictions)
+    
+    
         
         
        # loss_data.append(loss.detach().nump())
-        
-       # TODO validate at the end of the epoch
-       # compare the training loss with the validation loss
+       
+   # add validation after each epoch 
+   # TODO compare training loss with validation loss
+   # evaluate the model
+    
+
+    

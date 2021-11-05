@@ -71,7 +71,7 @@ class ImageLoader(VisionDataset):
         RGB_sample = np.asarray(RGB_sample, np.float32) / (2 ** 8 - 1)
         # X_sample = np.concatenate([RGB_sample, np.expand_dims(NIR_sample, axis=-1)], axis=-1)
         
-        X_sample = RGB_sample()
+        X_sample = RGB_sample
 ###########################################################################################################
 ###########################################################################################################
         # ### correct gt data ###
