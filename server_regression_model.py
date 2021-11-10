@@ -88,4 +88,24 @@ class UNet2(nn.Module):
     x = self.regressor(x)
     return x
 
+#%%
+class MLP(nn.Module):
+    '''
+      Multilayer Perceptron for regression.
+    '''
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.Sequential(
+          nn.Linear(4, 64),
+          nn.ReLU(),
+          nn.Linear(64, 32),
+          nn.ReLU(),
+          nn.Linear(32, 1)
+        )
 
+
+    def forward(self, x):
+        '''
+          Forward pass
+        '''
+        return self.layers(x)

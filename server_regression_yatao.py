@@ -59,6 +59,12 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
                 #########################################################
                 inputs = nn.functional.normalize(inputs).to(device)
                 labels = torch.squeeze(labels)
+                
+                s_input = inputs.shape
+                inputs = inputs.reshape(s_input[0],256,256,4)
+                inputs = inputs.reshape((s_input[0]*256*256,4))
+                labels = labels.reshape((s_input[0]*256*256))
+                
                 ###########################################################
                 ##########################################################
                 labels = labels.float().to(device)
@@ -148,7 +154,7 @@ if __name__ == '__main__':
 
 
     num_output = 1  # regression task
-    num_epochs = 200
+    num_epochs = 5
     num_batches = 8
     # generate train loader and validation loader
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size])
@@ -169,17 +175,9 @@ if __name__ == '__main__':
     print("device: {}".format(device))
 
     # select segmentation model
-    #model_ft = models.segmentation.fcn_resnet50(pretrained=True, progress=True)
-    model_ft = server_regression_model.UNet2().to(device)
-    # # adjust the output dimensions
-    # model_ft.classifier = FCNHead(2048, num_output)
-    # model_ft.aux_classifier = FCNHead(1024, num_output)
-    # # adjust 3 channel to 4 channel
-    # weight = model_ft.backbone.conv1.weight.clone()
-    # model_ft.backbone.conv1 = nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    # with torch.no_grad():
-    #     model_ft.backbone.conv1.weight[:, :3] = weight
-    #     model_ft.backbone.conv1.weight[:, 3] = model_ft.backbone.conv1.weight[:, 0]
+    #model_ft = server_regression_model.UNet2().to(device)
+    model_ft = server_regression_model.MLP().to(device)
+
 
     # create the optimizer
     model_ft = model_ft.to(device)
@@ -199,11 +197,11 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
 
     # train and validation
-    log_path = "log_fcn_resnet50"
+    log_path = "Multilayer_Perceptron"
     print('before training, memory: %.4f GB' % (psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024 / 1024))
     model_ft, hist_acc = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs, log_path)
     print('after training, memory: %.4f GB' % (psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024 / 1024))
-    torch.save(model_ft, "model_fcn_resnet50_best")
-    torch.save(model_ft.state_dict(), "model_fcn_resnet50_state_dict_best")
+    torch.save(model_ft, "model_Multilayer_Perceptron_best")
+    torch.save(model_ft.state_dict(), "model_Multilayer_Perceptron_state_dict_best")
     print("hist_acc:")
     print(hist_acc)
