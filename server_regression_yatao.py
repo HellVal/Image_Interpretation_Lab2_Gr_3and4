@@ -13,9 +13,9 @@ import torch.nn as nn
 import torch.optim as optim
 # from torchvision import datasets, transforms, models
 # from torchvision.models.segmentation.fcn import FCNHead, FCN
-import train_data_loader_yatao
+import server_train_data_loader_yatao
 
-import regression_model
+import server_regression_model
 #import torch.optim.lr_scheduler
 #import torch.optim.lr_scheduler.ReduceLROnPlateau as lro
 
@@ -55,7 +55,12 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
             flag = 1
             for inputs, labels in dataloaders[phase]:
                 #inputs = transform(inputs.float()).to(device)
+                #########################################################
+                #########################################################
                 inputs = nn.functional.normalize(inputs).to(device)
+                labels = torch.squeeze(labels)
+                ###########################################################
+                ##########################################################
                 labels = labels.float().to(device)
 
                 optimizer.zero_grad()
@@ -100,9 +105,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
             if phase == 'train':
                 tri_acc_history.append(epoch_loss)
                 
-        #adapt learnig rate
-        scheduler.step()
-        print('New learing rate: ', scheduler.get_last_lr())
+        # #adapt learnig rate
+        # scheduler.step()
+        # print('New learing rate: ', scheduler.get_last_lr())
 
     time_used = time.time() - begin_time
     print('Training time: {}'.format(time_used))
@@ -137,7 +142,7 @@ if __name__ == '__main__':
 
     # dataset and some basic variables
     dataTraining = root + '/training_data.hdf5'
-    dataset = train_data_loader_yatao.ImageLoader(windowsize=256, test=False, datafile=dataTraining)
+    dataset = server_train_data_loader_yatao.ImageLoader(windowsize=256, test=False, datafile=dataTraining)
     train_size = int(len(dataset) * 0.75)
     valid_size = len(dataset) - train_size
 
@@ -165,7 +170,7 @@ if __name__ == '__main__':
 
     # select segmentation model
     #model_ft = models.segmentation.fcn_resnet50(pretrained=True, progress=True)
-    model_ft = model = regression_model.UNet2().to(device)
+    model_ft = server_regression_model.UNet2().to(device)
     # # adjust the output dimensions
     # model_ft.classifier = FCNHead(2048, num_output)
     # model_ft.aux_classifier = FCNHead(1024, num_output)
@@ -185,7 +190,7 @@ if __name__ == '__main__':
         if param.requires_grad:  # only the fc layer
             params_to_update.append(param)
             print("\t", name)
-    optimizer_ft = optim.SGD(params_to_update, lr=0.01, momentum=0.9)
+    optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
     
     # adaptiv learning rate 
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer_ft, gamma = 0.9)

@@ -15,7 +15,7 @@ class ImageLoader(VisionDataset):
     def __init__(self, windowsize=128, test=False,datafile=''):
         self.wsize = windowsize
         super().__init__(None)
-        self.num_smpls, self.sh_x, self.sh_y = 4, 10980, 10980  # size of each image
+        self.num_smpls, self.sh_x, self.sh_y = 4, 10980, 10980 # size of each image
 
         self.pad_x = (self.sh_x - (self.sh_x % self.wsize))
         self.pad_y = (self.sh_y - (self.sh_y % self.wsize))
@@ -53,7 +53,11 @@ class ImageLoader(VisionDataset):
         GT_sample = self.GT[b, n:n + self.wsize, m:m + self.wsize]
         # print(b, RGB_sample.shape, GT_sample.shape, RGB_sample_1.shape, GT_sample_1.shape)
 
-        RGB_sample = np.asarray(RGB_sample, np.float32) / (2 ** 8 - 1)
+##############################################################################
+##############################################################################
+        RGB_sample = np.asarray(RGB_sample, np.float32)## / (2 ** 8 - 1)
+##############################################################################
+##############################################################################
         X_sample = RGB_sample
 
         # pad the data if size does not match
