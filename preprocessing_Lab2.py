@@ -15,19 +15,25 @@ files = ["\dataset_rgb_nir_train.hdf5", "\dataset_rgb_nir_test.hdf5"]
 output = r"P:\pf\pfstud\II_Group3"
 
 # Loading Data
-file = root + files[0]
+file = root + files[1]
 h5 = h5py.File(file, 'r')
 #(h5.keys())
 
-img_names = ['INPT_1', 'INPT_2', 'INPT_3', 'INPT_4']
-nir_names = ['NIR_1', 'NIR_2', 'NIR_3', 'NIR_4']
-cld_names = ['CLD_1', 'CLD_2', 'CLD_3', 'CLD_4']
+# #train data
+# img_names = ['INPT_1', 'INPT_2', 'INPT_3', 'INPT_4']
+# nir_names = ['NIR_1', 'NIR_2', 'NIR_3', 'NIR_4']
+# cld_names = ['CLD_1', 'CLD_2', 'CLD_3', 'CLD_4']
 
-file_name = output + files[0]
+#test data
+img_names = ['INPT_0', 'INPT_5']
+nir_names = ['NIR_0', 'NIR_5']
+cld_names = ['CLD_0', 'CLD_5']
+
+file_name = output + files[1]
 hf = h5py.File(file_name, 'w')
 
 
-for j in range(1): #img_names.size
+for j in range(len(img_names)): #img_names.size    len(img_names)
     img = h5[img_names[j]]
     nir = h5[nir_names[j]]
     cld = h5[cld_names[j]]
@@ -36,7 +42,7 @@ for j in range(1): #img_names.size
     img_new = np.zeros((img[1].shape[0],img[1].shape[1] ,4))
     mean = np.zeros((img[1].shape[0],img[1].shape[1] ,4))
     
-    for i in range(img.shape[0]):
+    for i in range(nir.shape[0]):
         # Taking images out
         
         rgb_1 = img[i]
