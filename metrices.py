@@ -20,7 +20,7 @@ def computeMetrices(predicted, gt, outfile):
     residuals_mean = np.mean(residuals)
     residuals_std = np.std(residuals)
     residuals_median = np.median(residuals)
-    residual_MAD = stats.median_absolute_deviation(residuals)
+    residual_MAD = stats.median_absolute_deviation(residuals) # Median absolut deviation from median
     residuals_mode = statistics.mode(residuals.astype(int))
     
     metrices = {
