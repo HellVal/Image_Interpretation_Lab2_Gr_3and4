@@ -15,7 +15,7 @@ class ImageLoader(VisionDataset):
     def __init__(self, windowsize=128, test=False,datafile=''):
         self.wsize = windowsize
         super().__init__(None)
-        self.num_smpls, self.sh_x, self.sh_y =   1,5480,5480#2,10980,10980 # size of each image
+        self.num_smpls, self.sh_x, self.sh_y =   2,10980,10980 # size of each image
 
         self.pad_x = (self.sh_x - (self.sh_x % self.wsize))
         self.pad_y = (self.sh_y - (self.sh_y % self.wsize))
@@ -57,8 +57,9 @@ class ImageLoader(VisionDataset):
 ##############################################################################
         RGB_normal = np.zeros_like(RGB_sample, np.float32)
 
-        RGB_normal[:,:,:3] = np.asarray(RGB_sample[:,:,:3], np.float32)/3000.0## / (2 ** 8 - 1)
-        RGB_normal[:,:,3] = np.asarray(RGB_sample[:,:,3],np.float32)/8000.0
+        RGB_normal[:,:,:3] = np.clip(np.asarray(RGB_sample[:,:,:3], np.float32),0,3000)/3000.0## / (2 ** 8 - 1)
+        
+        RGB_normal[:,:,3] = np.clip(np.asarray(RGB_sample[:,:,3],np.float32),0,8000)/8000.0
 ##############################################################################
 ##############################################################################
         X_sample = RGB_normal

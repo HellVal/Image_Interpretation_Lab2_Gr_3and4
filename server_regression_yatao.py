@@ -18,7 +18,7 @@ import server_train_data_loader_yatao
 import server_regression_model
 #import torch.optim.lr_scheduler
 #import torch.optim.lr_scheduler.ReduceLROnPlateau as lro
-
+from random import randint
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
     begin_time = time.time()
@@ -39,9 +39,10 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
         print("Epoch {}/{}---".format(epoch, num_epochs))
         log_list.append("Epoch {}/{}---".format(epoch, num_epochs))
         
-        counter = 0
-
+        
+        train_counter = 0
         for phase in ['train', 'valid']:
+            counter = 0
             if phase == "train":
                 model.train()
                 print("Train with {} samples".format(len(dataloaders[phase])))
@@ -59,45 +60,62 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
                 #not good idea for regression network!!!
                 #inputs = transform(inputs.float()).to(device)
                 #inputs = nn.functional.normalize(inputs).to(device)
-                
-                #########################################################
-                #########################################################
-                # labels = torch.squeeze(labels)
-                # s_input = inputs.shape
-                # inputs = inputs.reshape(s_input[0],256,256,4)
-                # inputs = inputs.reshape((s_input[0]*256*256,4))
-                # labels = labels.reshape((s_input[0]*256*256))
-                ###########################################################
-                ##########################################################
+
                 inputs = inputs.float().to(device)
                 labels = labels.float().to(device)
                 
-                # inputs = torch.zeros((4,4,256,256)).to(device)
-                # inputs[:,:,:128,:128] = 1
-                # labels = torch.zeros((4,256,256)).to(device)
-                # labels[:,:128,:128] =1
+                # inputs = torch.zeros((8,4,256,256)).to(device)
+                # inputs[:,:,0:128, 0:128] = 1
+                # labels = torch.zeros((8,256,256)).to(device)
+                # labels[:,0:128,0:128] = 1
+                
 
                 optimizer.zero_grad()
 
                 # forward, track history in train phase
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model.forward(inputs)  # outputs = model(inputs)
-                    outputs = torch.squeeze(outputs)
+                    #print(torch.isnan(inputs).sum())
+                    outputs_masked = torch.squeeze(outputs)
                     
 
                     
                     mask = labels.ge(0.)
                     mask = torch.squeeze(mask)
-                    labels = torch.squeeze(labels)
+                    labels_masked = torch.squeeze(labels)
                     #print(mask.sum())
                     if mask.sum() == 0:
                         counter = counter+1
+                        print('Hello')
                         continue
                     
-                    #print(mask.sum())
-                    loss = criterion(outputs[mask], labels[mask])
+                    loss = criterion(outputs_masked[mask], labels_masked[mask])
+                    
+                    ## visualization
+                    #size of batch
+                    if train_counter%50 == 0:
+                        s_inputs = inputs.shape
+                        random_number = randint(0,s_inputs[0]-1)
+                        # print(s_inputs)
+                        # print(random_number)
+                        plot_inputs = inputs.cpu().detach().numpy()
+                        plot_inputs = np.transpose(plot_inputs,(0,2,3,1))
+                        plot_labels =labels.cpu().detach().numpy()
+                        plot_outputs = outputs.cpu().detach().numpy()
                         
-                    #loss = criterion(outputs, labels)  # expand the dimension of label to 4
+                        fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+                        fig.suptitle('Actuall loss: '+str(loss.item()))
+                        ax1.imshow(plot_inputs[random_number,:,:,:3])
+                        ax1.title.set_text('input data RGB')
+                        ax2.imshow(plot_labels[random_number,:,:])
+                        ax2.title.set_text('labels')
+                        
+                        
+                        ax3.imshow(plot_outputs[random_number,0,:,:])
+                        ax3.title.set_text('output')
+                        fig.savefig('./output/'+str(epoch)+'_'+str(train_counter)+'.png')
+                        plt.close()
+
 
                     # backward and optimize in train phase
                     if phase == 'train':
@@ -114,7 +132,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
                 # print("input size(0): {}".format(inputs.size(0)))  # batch size
                 # running_loss += loss.item() * inputs.size(0)
                 running_loss += loss.item()
-            
+                train_counter = train_counter+1
         
 
 
@@ -179,8 +197,8 @@ if __name__ == '__main__':
 
 
     num_output = 1  # regression task
-    num_epochs = 50
-    num_batches = 4
+    num_epochs = 100
+    num_batches = 8
     # generate train loader and validation loader
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size])
     train_loader = torch.utils.data.DataLoader(train_dataset,
@@ -200,9 +218,9 @@ if __name__ == '__main__':
     print("device: {}".format(device))
 
     # select segmentation model
-    #model_ft = server_regression_model.UNet2().to(device)
+    model_ft = server_regression_model.UNet2().to(device)
     #model_ft = server_regression_model.MLP().to(device)
-    model_ft = server_regression_model.UNet().to(device)
+    #model_ft = server_regression_model.UNet().to(device)
 
 
     # create the optimizer
@@ -214,7 +232,7 @@ if __name__ == '__main__':
         if param.requires_grad:  # only the fc layer
             params_to_update.append(param)
             print("\t", name)
-    optimizer_ft = optim.SGD(params_to_update, lr=0.01, momentum=0.9)
+    optimizer_ft = optim.SGD(params_to_update, lr=0.000001, momentum=0.9)
     
     # adaptiv learning rate 
     #scheduler = optim.lr_scheduler.ExponentialLR(optimizer_ft, gamma = 0.9)
