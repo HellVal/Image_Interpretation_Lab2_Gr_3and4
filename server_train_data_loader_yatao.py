@@ -15,7 +15,7 @@ class ImageLoader(VisionDataset):
     def __init__(self, windowsize=128, test=False,datafile=''):
         self.wsize = windowsize
         super().__init__(None)
-        self.num_smpls, self.sh_x, self.sh_y = 4, 10980, 10980 # size of each image
+        self.num_smpls, self.sh_x, self.sh_y =   1,5480,5480#2,10980,10980 # size of each image
 
         self.pad_x = (self.sh_x - (self.sh_x % self.wsize))
         self.pad_y = (self.sh_y - (self.sh_y % self.wsize))
@@ -55,10 +55,13 @@ class ImageLoader(VisionDataset):
 
 ##############################################################################
 ##############################################################################
-        RGB_sample = np.asarray(RGB_sample, np.float32)## / (2 ** 8 - 1)
+        RGB_normal = np.zeros_like(RGB_sample, np.float32)
+
+        RGB_normal[:,:,:3] = np.asarray(RGB_sample[:,:,:3], np.float32)/3000.0## / (2 ** 8 - 1)
+        RGB_normal[:,:,3] = np.asarray(RGB_sample[:,:,3],np.float32)/8000.0
 ##############################################################################
 ##############################################################################
-        X_sample = RGB_sample
+        X_sample = RGB_normal
 
         # pad the data if size does not match
         sh_x, sh_y = np.shape(GT_sample)
@@ -70,12 +73,12 @@ class ImageLoader(VisionDataset):
 
         x_sample = np.pad(X_sample, [[0, pad_x], [0, pad_y], [0, 0]])
         gt_sample = np.pad(GT_sample, [[0, pad_x], [0, pad_y]], 'constant',
-                           constant_values=[0])  # pad with 0 to mark absence of data
+                           constant_values=[-1])  # pad with 0 to mark absence of data
 
         # pytorch wants the data channel first - you might have to change this
         x_sample = np.transpose(x_sample, (2, 0, 1))
 
-        # mask to set rgb->nan as 0 and set gt<0 as 0
+        #mask to set rgb->nan as 0 and set gt<0 as 0
         x_sample_mask = np.isnan(x_sample)
         x_sample_mask_all = np.logical_or(np.logical_or(np.logical_or(x_sample_mask[0], x_sample_mask[1]),
                                                         x_sample_mask[2]), x_sample_mask[3])
@@ -85,7 +88,7 @@ class ImageLoader(VisionDataset):
         # set mask=false as 0
         for i in range(len(x_sample)):
             x_sample[i][data_sample_mask] = 0
-        gt_sample[data_sample_mask] = 0
+        gt_sample[data_sample_mask] = -1
 
         return np.asarray(x_sample), gt_sample
 

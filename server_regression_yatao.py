@@ -38,6 +38,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
     for epoch in range(1, num_epochs+1):
         print("Epoch {}/{}---".format(epoch, num_epochs))
         log_list.append("Epoch {}/{}---".format(epoch, num_epochs))
+        
+        counter = 0
 
         for phase in ['train', 'valid']:
             if phase == "train":
@@ -54,20 +56,26 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
             # Iterate
             flag = 1
             for inputs, labels in dataloaders[phase]:
+                #not good idea for regression network!!!
                 #inputs = transform(inputs.float()).to(device)
+                #inputs = nn.functional.normalize(inputs).to(device)
+                
                 #########################################################
                 #########################################################
-                inputs = nn.functional.normalize(inputs).to(device)
-                labels = torch.squeeze(labels)
-                
-                s_input = inputs.shape
-                inputs = inputs.reshape(s_input[0],256,256,4)
-                inputs = inputs.reshape((s_input[0]*256*256,4))
-                labels = labels.reshape((s_input[0]*256*256))
-                
+                # labels = torch.squeeze(labels)
+                # s_input = inputs.shape
+                # inputs = inputs.reshape(s_input[0],256,256,4)
+                # inputs = inputs.reshape((s_input[0]*256*256,4))
+                # labels = labels.reshape((s_input[0]*256*256))
                 ###########################################################
                 ##########################################################
+                inputs = inputs.float().to(device)
                 labels = labels.float().to(device)
+                
+                # inputs = torch.zeros((4,4,256,256)).to(device)
+                # inputs[:,:,:128,:128] = 1
+                # labels = torch.zeros((4,256,256)).to(device)
+                # labels[:,:128,:128] =1
 
                 optimizer.zero_grad()
 
@@ -75,7 +83,21 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model.forward(inputs)  # outputs = model(inputs)
                     outputs = torch.squeeze(outputs)
-                    loss = criterion(outputs, labels)  # expand the dimension of label to 4
+                    
+
+                    
+                    mask = labels.ge(0.)
+                    mask = torch.squeeze(mask)
+                    labels = torch.squeeze(labels)
+                    #print(mask.sum())
+                    if mask.sum() == 0:
+                        counter = counter+1
+                        continue
+                    
+                    #print(mask.sum())
+                    loss = criterion(outputs[mask], labels[mask])
+                        
+                    #loss = criterion(outputs, labels)  # expand the dimension of label to 4
 
                     # backward and optimize in train phase
                     if phase == 'train':
@@ -97,7 +119,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
 
 
             # print("len(dataloaders[phase].dataset): {}".format(len(dataloaders[phase].dataset)))
-            epoch_loss = running_loss / len(dataloaders[phase].dataset)
+            epoch_loss = running_loss / (len(dataloaders[phase].dataset)-counter)
             # epoch_loss = running_loss / len(dataloaders[phase])
             print('{} loss: {:.4f}'.format(phase, epoch_loss))
             log_list.append('{} loss: {:.4f}'.format(phase, epoch_loss))
@@ -114,6 +136,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
         # #adapt learnig rate
         # scheduler.step()
         # print('New learing rate: ', scheduler.get_last_lr())
+    
 
     time_used = time.time() - begin_time
     print('Training time: {}'.format(time_used))
@@ -144,18 +167,20 @@ def viz(module, _input, _output):
 
 if __name__ == '__main__':
 
-    root = 'P:/pf/pfstud/II_Group3/'
+    root = 'P:/pf/pfstud/II_Group3/final_data/'
 
     # dataset and some basic variables
-    dataTraining = root + '/training_data.hdf5'
+    dataTraining = root + '/test_data.hdf5'
+    #dataTraining = root+'/black_image.hdf5'
     dataset = server_train_data_loader_yatao.ImageLoader(windowsize=256, test=False, datafile=dataTraining)
     train_size = int(len(dataset) * 0.75)
     valid_size = len(dataset) - train_size
 
 
+
     num_output = 1  # regression task
-    num_epochs = 5
-    num_batches = 8
+    num_epochs = 50
+    num_batches = 4
     # generate train loader and validation loader
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size])
     train_loader = torch.utils.data.DataLoader(train_dataset,
@@ -176,7 +201,8 @@ if __name__ == '__main__':
 
     # select segmentation model
     #model_ft = server_regression_model.UNet2().to(device)
-    model_ft = server_regression_model.MLP().to(device)
+    #model_ft = server_regression_model.MLP().to(device)
+    model_ft = server_regression_model.UNet().to(device)
 
 
     # create the optimizer
@@ -188,20 +214,21 @@ if __name__ == '__main__':
         if param.requires_grad:  # only the fc layer
             params_to_update.append(param)
             print("\t", name)
-    optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+    optimizer_ft = optim.SGD(params_to_update, lr=0.01, momentum=0.9)
     
     # adaptiv learning rate 
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer_ft, gamma = 0.9)
+    #scheduler = optim.lr_scheduler.ExponentialLR(optimizer_ft, gamma = 0.9)
 
     # setup the loss function
     criterion = nn.MSELoss()
+    
 
     # train and validation
-    log_path = "Multilayer_Perceptron"
+    log_path = "UNET"
     print('before training, memory: %.4f GB' % (psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024 / 1024))
     model_ft, hist_acc = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs, log_path)
     print('after training, memory: %.4f GB' % (psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024 / 1024))
-    torch.save(model_ft, "model_Multilayer_Perceptron_best")
-    torch.save(model_ft.state_dict(), "model_Multilayer_Perceptron_state_dict_best")
+    torch.save(model_ft, "model_UNET_best")
+    torch.save(model_ft.state_dict(), "model_UNET_state_dict_best")
     print("hist_acc:")
     print(hist_acc)
