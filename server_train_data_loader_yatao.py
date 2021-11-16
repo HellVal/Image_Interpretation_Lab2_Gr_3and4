@@ -15,7 +15,7 @@ class ImageLoader(VisionDataset):
     def __init__(self, windowsize=128, test=False,datafile=''):
         self.wsize = windowsize
         super().__init__(None)
-        self.num_smpls, self.sh_x, self.sh_y =   2,10980,10980 # size of each image
+        self.num_smpls, self.sh_x, self.sh_y =   4,10980,10980 # size of each image
 
         self.pad_x = (self.sh_x - (self.sh_x % self.wsize))
         self.pad_y = (self.sh_y - (self.sh_y % self.wsize))

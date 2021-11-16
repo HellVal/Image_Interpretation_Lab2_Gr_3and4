@@ -64,12 +64,6 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, log_path):
                 inputs = inputs.float().to(device)
                 labels = labels.float().to(device)
                 
-                # inputs = torch.zeros((8,4,256,256)).to(device)
-                # inputs[:,:,0:128, 0:128] = 1
-                # labels = torch.zeros((8,256,256)).to(device)
-                # labels[:,0:128,0:128] = 1
-                
-
                 optimizer.zero_grad()
 
                 # forward, track history in train phase
@@ -188,7 +182,7 @@ if __name__ == '__main__':
     root = 'P:/pf/pfstud/II_Group3/final_data/'
 
     # dataset and some basic variables
-    dataTraining = root + '/test_data.hdf5'
+    dataTraining = root + '/train_data.hdf5'
     #dataTraining = root+'/black_image.hdf5'
     dataset = server_train_data_loader_yatao.ImageLoader(windowsize=256, test=False, datafile=dataTraining)
     train_size = int(len(dataset) * 0.75)
@@ -197,17 +191,17 @@ if __name__ == '__main__':
 
 
     num_output = 1  # regression task
-    num_epochs = 100
-    num_batches = 8
+    num_epochs = 30
+    num_batches = 4
     # generate train loader and validation loader
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, valid_size])
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=num_batches,
-                                               num_workers=8,
+                                               num_workers=6,
                                                shuffle=True)
     valid_loader = torch.utils.data.DataLoader(validation_dataset,
                                                batch_size=num_batches,
-                                               num_workers=8,
+                                               num_workers=6,
                                                shuffle=True)
     dataloaders_dict = {'train': train_loader, 'valid': valid_loader}
     print("Train size: {}".format(len(train_loader)))
@@ -219,8 +213,7 @@ if __name__ == '__main__':
 
     # select segmentation model
     model_ft = server_regression_model.UNet2().to(device)
-    #model_ft = server_regression_model.MLP().to(device)
-    #model_ft = server_regression_model.UNet().to(device)
+
 
 
     # create the optimizer
