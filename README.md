@@ -3,7 +3,7 @@
 **final_regression_inference.py**<br/>
 code to run the test data set <br/>
 **final_regression_mode_fcn_resnet.py**<br/>
-main fail to run the fcn-resnet model<br/>
+main code to run the fcn-resnet model<br/>
 **final_regression_model_unet.py**<br/>
 contains the unet model<br/>
 **final_regression_unet.py**<br/>
