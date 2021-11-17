@@ -17,10 +17,10 @@ plots the histograms of the input data<br/>
 **histogramFinalData.py**<br/>
 plots the histograms of the final data<br/>
 **metrics.py**<br/>
-
+function to compute the metrics for evaluation 
 **metrices_with_RMSE.py**<br/>
-
+same as metrics.py, additional RMSE computation 
 **plottingImages.py**<br/>
-
+script for plotting the h5 images
 **preprocessing_Lab2.py**<br/>
-code for preprocessing the given data. Computes the images which are used for the training in the network<br/>
+Code for preprocessing the given data. Computes the images which are used for the training in the network<br/>
